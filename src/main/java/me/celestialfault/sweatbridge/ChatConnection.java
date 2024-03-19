@@ -14,12 +14,12 @@ import java.util.regex.Pattern;
 
 public class ChatConnection extends WebSocketClient {
 
+	private static final Pattern USERNAME_REGEX = Pattern.compile(String.format("(\\b)(%s)(\\b)", Minecraft.getMinecraft().getSession().getUsername()));
 	private static final char FORMAT_CODE = '§';
-	private static ChatConnection INSTANCE;
 	private static final String HOST = "wss://sweatbridge.odinair.xyz";
+	private static ChatConnection INSTANCE;
 	private boolean reconnecting = false;
 	private int reconnectAttempts = 0;
-	private final Pattern usernameRegex = Pattern.compile(String.format("\\b%s\\b", Minecraft.getMinecraft().getSession().getUsername()));
 
 	private ChatConnection() {
 		super(getUri());
@@ -62,8 +62,10 @@ public class ChatConnection extends WebSocketClient {
 		char usernameColor = data.get("author").getAsString().startsWith("[DISCORD]")
 				? Config.DISCORD_USERNAME_COLOR : Config.USERNAME_COLOR;
 
+		String message = EnumChatFormatting.getTextWithoutFormattingCodes(data.get("message").getAsString());
+		message = USERNAME_REGEX.matcher(message).replaceAll("$1" + EnumChatFormatting.YELLOW + "$2" + EnumChatFormatting.RESET + "$3");
 		return "" + FORMAT_CODE + usernameColor + EnumChatFormatting.getTextWithoutFormattingCodes(data.get("author").getAsString())
-				+ EnumChatFormatting.RESET + ": " + EnumChatFormatting.getTextWithoutFormattingCodes(data.get("message").getAsString());
+				+ EnumChatFormatting.RESET + ": " + message;
 	}
 
 	private synchronized void delayedReconnect() {
@@ -99,7 +101,7 @@ public class ChatConnection extends WebSocketClient {
 		SweatBridge.send(format(data));
 
 		Minecraft client = Minecraft.getMinecraft();
-		if(client.thePlayer != null && usernameRegex.matcher(data.get("message").getAsString()).find()) {
+		if(client.thePlayer != null && USERNAME_REGEX.matcher(data.get("message").getAsString()).find()) {
 			client.thePlayer.playSound("random.successful_hit", 1f, 1f);
 		}
 	}
