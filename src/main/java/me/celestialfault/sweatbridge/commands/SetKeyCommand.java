@@ -24,7 +24,7 @@ public class SetKeyCommand extends CommandBase {
 	@Override
 	public void processCommand(ICommandSender sender, String[] args) throws CommandException {
 		if(args.length != 1) {
-			SweatBridge.send(EnumChatFormatting.RED + "");
+			SweatBridge.send(EnumChatFormatting.RED + "Use this command with a key obtained from /apikey in Discord!");
 			return;
 		}
 

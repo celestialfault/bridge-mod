@@ -13,6 +13,7 @@ import java.net.URI;
 
 public class ChatConnection extends WebSocketClient {
 
+	private static final char FORMAT_CODE = '§';
 	private static ChatConnection INSTANCE;
 	private static final String HOST = "wss://sweatbridge.odinair.xyz";
 	private boolean reconnecting = false;
@@ -50,8 +51,11 @@ public class ChatConnection extends WebSocketClient {
 	}
 
 	private static String format(JsonObject data) {
-		return EnumChatFormatting.GREEN + EnumChatFormatting.getTextWithoutFormattingCodes(data.get("author").getAsString()) + ": "
-				+ EnumChatFormatting.RESET + EnumChatFormatting.getTextWithoutFormattingCodes(data.get("message").getAsString());
+		char usernameColor = data.get("author").getAsString().startsWith("[DISCORD]")
+				? Config.DISCORD_USERNAME_COLOR : Config.USERNAME_COLOR;
+
+		return "" + FORMAT_CODE + usernameColor + EnumChatFormatting.getTextWithoutFormattingCodes(data.get("author").getAsString())
+				+ EnumChatFormatting.RESET + ": " + EnumChatFormatting.getTextWithoutFormattingCodes(data.get("message").getAsString());
 	}
 
 	private synchronized void delayedReconnect() {
