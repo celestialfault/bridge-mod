@@ -1,0 +1,18 @@
+[
+  {
+    "modid": "sweatbridge",
+    "name": "Sweat Bridge",
+    "description": "In-game Discord chat bridge",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "url": "https://github.com/celestialfault/SweatBridge",
+    "updateUrl": "",
+    "authorList": [
+      "celeste"
+    ],
+    "credits": "",
+    "logoFile": "",
+    "screenshots": [],
+    "dependencies": []
+  }
+]
