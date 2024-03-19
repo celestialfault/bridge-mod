@@ -21,6 +21,7 @@ public class SweatBridge {
 
     private static final char FORMAT_CODE = '§';
     public static final Logger LOGGER = LoggerFactory.getLogger(SweatBridge.class);
+    public static boolean SEND_IN_CHAT = false;
 
     @SuppressWarnings("unused")
     @Mod.EventHandler

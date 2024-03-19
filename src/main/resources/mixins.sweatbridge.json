@@ -1,0 +1,8 @@
+{
+  "package": "me.celestialfault.sweatbridge.mixin",
+  "minVersion": "0.7",
+  "compatibilityLevel": "JAVA_8",
+  "client": [
+    "ClientPlayerMixin"
+  ]
+}

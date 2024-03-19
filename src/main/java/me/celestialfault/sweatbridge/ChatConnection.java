@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URI;
+import java.util.regex.Pattern;
 
 public class ChatConnection extends WebSocketClient {
 
@@ -18,6 +19,7 @@ public class ChatConnection extends WebSocketClient {
 	private static final String HOST = "wss://sweatbridge.odinair.xyz";
 	private boolean reconnecting = false;
 	private int reconnectAttempts = 0;
+	private final Pattern usernameRegex = Pattern.compile(String.format("\\b%s\\b", Minecraft.getMinecraft().getSession().getUsername()));
 
 	private ChatConnection() {
 		super(getUri());
@@ -47,6 +49,12 @@ public class ChatConnection extends WebSocketClient {
 		if(INSTANCE != null) {
 			INSTANCE.close();
 			INSTANCE = null;
+		}
+	}
+
+	public static void sendMessage(String message) {
+		if(INSTANCE != null) {
+			INSTANCE.send(message);
 		}
 	}
 
@@ -89,6 +97,11 @@ public class ChatConnection extends WebSocketClient {
 			return;
 		}
 		SweatBridge.send(format(data));
+
+		Minecraft client = Minecraft.getMinecraft();
+		if(client.thePlayer != null && usernameRegex.matcher(data.get("message").getAsString()).find()) {
+			client.thePlayer.playSound("random.successful_hit", 1f, 1f);
+		}
 	}
 
 	@Override

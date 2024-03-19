@@ -23,6 +23,7 @@ public class ToggleChatCommand extends CommandBase {
 	public void processCommand(ICommandSender sender, String[] args) throws CommandException {
 		if(Config.ENABLED) {
 			Config.ENABLED = false;
+			SweatBridge.SEND_IN_CHAT = false;
 			ChatConnection.disconnect();
 			SweatBridge.send("Toggled chat " + EnumChatFormatting.RED + "off" + EnumChatFormatting.RESET + ".");
 		} else {

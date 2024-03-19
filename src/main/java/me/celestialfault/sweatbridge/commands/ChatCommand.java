@@ -25,11 +25,6 @@ public class ChatCommand extends CommandBase {
 
 	@Override
 	public void processCommand(ICommandSender sender, String[] args) throws CommandException {
-		if(args.length == 0) {
-			SweatBridge.send(EnumChatFormatting.RED + "Missing a message to send!");
-			return;
-		}
-
 		if(Config.TOKEN == null || Config.TOKEN.isEmpty()) {
 			SweatBridge.send(EnumChatFormatting.RED + "You do not have an API key set!");
 			return;
@@ -41,9 +36,15 @@ public class ChatCommand extends CommandBase {
 			return;
 		}
 
-		ChatConnection connection = ChatConnection.getInstance();
-		if(connection != null) {
-			connection.send(StringUtils.join(args, " "));
+		if(args.length == 0) {
+			SweatBridge.SEND_IN_CHAT = !SweatBridge.SEND_IN_CHAT;
+			if(SweatBridge.SEND_IN_CHAT) {
+				SweatBridge.send("Messages sent will now be sent in bridge chat; use this command again to toggle off");
+			} else {
+				SweatBridge.send("Messages will no longer be sent in bridge chat");
+			}
+		} else {
+			ChatConnection.sendMessage(StringUtils.join(args, " "));
 		}
 	}
 
