@@ -5,6 +5,7 @@ import me.celestialfault.sweatbridge.commands.SetKeyCommand;
 import me.celestialfault.sweatbridge.commands.ToggleChatCommand;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.client.ClientCommandHandler;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
@@ -16,6 +17,9 @@ import org.slf4j.LoggerFactory;
 
 @Mod(modid = "sweatbridge", useMetadata = true)
 public class SweatBridge {
+
+    public static final String PREFIX = "" + EnumChatFormatting.YELLOW + EnumChatFormatting.BOLD + "Sweat"
+            + EnumChatFormatting.GRAY + EnumChatFormatting.GOLD + " > " + EnumChatFormatting.RESET;
     public static final Logger LOGGER = LoggerFactory.getLogger(SweatBridge.class);
 
     @Mod.EventHandler
@@ -43,6 +47,6 @@ public class SweatBridge {
         if(client.thePlayer == null) {
             return;
         }
-        client.thePlayer.addChatMessage(new ChatComponentText(Constants.PREFIX + message));
+        client.thePlayer.addChatMessage(new ChatComponentText(PREFIX + message));
     }
 }

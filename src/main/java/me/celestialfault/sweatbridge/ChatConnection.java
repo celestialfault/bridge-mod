@@ -14,7 +14,7 @@ import java.net.URI;
 public class ChatConnection extends WebSocketClient {
 
 	private static ChatConnection INSTANCE;
-	private static final String HOST = "ws://localhost:8000";
+	private static final String HOST = "wss://sweatbridge.odinair.xyz";
 	private boolean reconnecting = false;
 
 	private ChatConnection() {

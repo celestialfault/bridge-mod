@@ -31,6 +31,7 @@ public class ToggleChatCommand extends CommandBase {
 			if(connection != null) connection.connect();
 			SweatBridge.send("Toggled chat " + EnumChatFormatting.GREEN + "on" + EnumChatFormatting.RESET + ".");
 		}
+		Config.save();
 	}
 
 	@Override

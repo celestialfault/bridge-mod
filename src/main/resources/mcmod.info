@@ -5,7 +5,7 @@
     "description": "In-game Discord chat bridge",
     "version": "${version}",
     "mcversion": "${mcversion}",
-    "url": "https://github.com/celestialfault/SweatBridge",
+    "url": "https://github.com/celestialfault/bridge-mod",
     "updateUrl": "",
     "authorList": [
       "celeste"

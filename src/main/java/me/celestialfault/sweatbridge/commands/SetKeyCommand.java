@@ -28,6 +28,11 @@ public class SetKeyCommand extends CommandBase {
 			return;
 		}
 
+		if(!Config.ENABLED) {
+			SweatBridge.send(EnumChatFormatting.RED + "You have chat toggled off! Toggle it on with /ssctoggle before using this command!");
+			return;
+		}
+
 		if(ChatConnection.isConnected()) {
 			ChatConnection.disconnect();
 		}
