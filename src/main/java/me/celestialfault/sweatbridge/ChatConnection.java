@@ -16,6 +16,7 @@ public class ChatConnection extends WebSocketClient {
 	private static ChatConnection INSTANCE;
 	private static final String HOST = "wss://sweatbridge.odinair.xyz";
 	private boolean reconnecting = false;
+	private int reconnectAttempts = 0;
 
 	private ChatConnection() {
 		super(getUri());
@@ -58,7 +59,7 @@ public class ChatConnection extends WebSocketClient {
 		reconnecting = true;
 		new Thread(() -> {
 			try {
-				Thread.sleep(2000L);
+				Thread.sleep(500L * (Math.min(reconnectAttempts, 5) ^ 2));
 			} catch(InterruptedException e) {
 				throw new RuntimeException(e);
 			}
@@ -71,6 +72,7 @@ public class ChatConnection extends WebSocketClient {
 	@Override
 	public void onOpen(ServerHandshake handshake) {
 		SweatBridge.send(EnumChatFormatting.GRAY + "Connected to chat");
+		reconnectAttempts = 0;
 	}
 
 	@Override
@@ -87,7 +89,7 @@ public class ChatConnection extends WebSocketClient {
 
 	@Override
 	public void onClose(int code, String reason, boolean remote) {
-		if(code == 1002) {
+		if(reason.contains("403 Forbidden")) {
 			SweatBridge.send(EnumChatFormatting.RED + "Chat key is invalid!" + EnumChatFormatting.RESET + " Set a new one with /ssckey!");
 			SweatBridge.LOGGER.warn("Token is invalid, resetting in config");
 			Config.TOKEN = null;
@@ -96,6 +98,9 @@ public class ChatConnection extends WebSocketClient {
 			return;
 		}
 		if(code != 1000) {
+			if(reconnectAttempts++ == 0) {
+				SweatBridge.send(EnumChatFormatting.GRAY + "Disconnected from chat, attempting to reconnect...");
+			}
 			SweatBridge.LOGGER.warn("Disconnected from chat");
 			delayedReconnect();
 		}
