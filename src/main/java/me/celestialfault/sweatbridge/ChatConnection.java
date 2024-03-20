@@ -23,6 +23,7 @@ public class ChatConnection extends WebSocketClient {
 
 	private ChatConnection() {
 		super(getUri());
+		addHeader("Api-Version", "1");
 	}
 
 	public static URI getUri() {
@@ -52,9 +53,28 @@ public class ChatConnection extends WebSocketClient {
 		}
 	}
 
+	public static void requestOnline() {
+		if(INSTANCE != null) {
+			JsonObject data = new JsonObject();
+			data.addProperty("type", "request_online");
+			try {
+				INSTANCE.send(Config.ADAPTER.toJson(data));
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
+	}
+
 	public static void sendMessage(String message) {
 		if(INSTANCE != null) {
-			INSTANCE.send(message);
+			JsonObject data = new JsonObject();
+			data.addProperty("type", "send");
+			data.addProperty("data", message);
+			try {
+				INSTANCE.send(Config.ADAPTER.toJson(data));
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
 		}
 	}
 
@@ -62,8 +82,15 @@ public class ChatConnection extends WebSocketClient {
 		char usernameColor = data.get("author").getAsString().startsWith("[DISCORD]")
 				? Config.DISCORD_USERNAME_COLOR : Config.USERNAME_COLOR;
 
-		String message = EnumChatFormatting.getTextWithoutFormattingCodes(data.get("message").getAsString());
-		message = USERNAME_REGEX.matcher(message).replaceAll("$1" + EnumChatFormatting.YELLOW + "$2" + EnumChatFormatting.RESET + "$3");
+		String message = data.get("message").getAsString();
+		if(data.has("system") && data.get("system").getAsBoolean()) {
+			return message;
+		}
+
+		message = EnumChatFormatting.getTextWithoutFormattingCodes(message);
+		if(!data.has("pings") || data.get("pings").getAsBoolean()) {
+			message = USERNAME_REGEX.matcher(message).replaceAll("$1" + EnumChatFormatting.YELLOW + "$2" + EnumChatFormatting.RESET + "$3");
+		}
 		return "" + FORMAT_CODE + usernameColor + EnumChatFormatting.getTextWithoutFormattingCodes(data.get("author").getAsString())
 				+ EnumChatFormatting.RESET + ": " + message;
 	}
@@ -100,6 +127,10 @@ public class ChatConnection extends WebSocketClient {
 		}
 		SweatBridge.send(format(data));
 
+		if((data.has("system") && data.get("system").getAsBoolean())
+				|| (data.has("pings") && !data.get("pings").getAsBoolean())) {
+			return;
+		}
 		Minecraft client = Minecraft.getMinecraft();
 		if(client.thePlayer != null && USERNAME_REGEX.matcher(data.get("message").getAsString()).find()) {
 			client.thePlayer.playSound("random.successful_hit", 1f, 1f);

@@ -1,9 +1,6 @@
 package me.celestialfault.sweatbridge;
 
-import me.celestialfault.sweatbridge.commands.ChatCommand;
-import me.celestialfault.sweatbridge.commands.ColorCommand;
-import me.celestialfault.sweatbridge.commands.SetKeyCommand;
-import me.celestialfault.sweatbridge.commands.ToggleChatCommand;
+import me.celestialfault.sweatbridge.commands.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
@@ -32,6 +29,7 @@ public class SweatBridge {
         ClientCommandHandler.instance.registerCommand(new SetKeyCommand());
         ClientCommandHandler.instance.registerCommand(new ToggleChatCommand());
         ClientCommandHandler.instance.registerCommand(new ColorCommand());
+        ClientCommandHandler.instance.registerCommand(new OnlineCommand());
     }
 
     @SuppressWarnings("unused")

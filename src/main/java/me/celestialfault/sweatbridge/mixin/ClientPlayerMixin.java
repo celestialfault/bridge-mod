@@ -15,6 +15,8 @@ public abstract class ClientPlayerMixin {
 		if(!message.startsWith("/") && SweatBridge.SEND_IN_CHAT && ChatConnection.isConnected()) {
 			ci.cancel();
 			ChatConnection.sendMessage(message);
+		} else if(message.startsWith("/chat ")) {
+			SweatBridge.SEND_IN_CHAT = false;
 		}
 	}
 }
