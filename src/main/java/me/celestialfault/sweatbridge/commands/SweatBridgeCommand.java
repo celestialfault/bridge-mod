@@ -16,8 +16,8 @@ public class SweatBridgeCommand extends CommandBase {
 	private static final Map<String, String> COMMAND_HELP = new LinkedHashMap<>();
 
 	static {
-		COMMAND_HELP.put("/chat ssc", "Toggle sending messages in bridge chat");
-		COMMAND_HELP.put("<message>", "Send a message in bridge chat");
+		COMMAND_HELP.put("/ssc", "Toggle sending messages in bridge chat");
+		COMMAND_HELP.put("/ssc <message>", "Send a message in bridge chat");
 		COMMAND_HELP.put("toggle", "Toggle if bridge chat should be visible");
 		COMMAND_HELP.put("online", "List all players currently connected");
 		COMMAND_HELP.put("color", "Set the color for a given chat component");
@@ -35,7 +35,7 @@ public class SweatBridgeCommand extends CommandBase {
 			builder.append(SweatBridge.FORMAT_CODE)
 				.append(Config.PREFIX_COLOR);
 			if(!entry.getKey().isEmpty() && !entry.getKey().startsWith("/")) {
-				builder.append("/ssc ");
+				builder.append("/sweat ");
 			}
 			if(!entry.getKey().isEmpty()) {
 				builder.append(entry.getKey());
@@ -146,6 +146,11 @@ public class SweatBridgeCommand extends CommandBase {
 
 	@Override
 	public void processCommand(ICommandSender sender, String[] args) throws CommandException {
+		if(args.length == 0) {
+			SweatBridge.send(false, getHelpMessage());
+			return;
+		}
+
 		switch(args[0].toLowerCase()) {
 			case "key":
 				setKey(Arrays.copyOfRange(args, 1, args.length));
@@ -160,6 +165,8 @@ public class SweatBridgeCommand extends CommandBase {
 			case "color":
 				setColor(Arrays.copyOfRange(args, 1, args.length));
 				break;
+			default:
+				SweatBridge.send(false, getHelpMessage());
 		}
 	}
 
