@@ -26,6 +26,7 @@ public class SweatBridge {
     public void init(FMLInitializationEvent ignored) {
         MinecraftForge.EVENT_BUS.register(this);
         Config.load();
+		ClientCommandHandler.instance.registerCommand(new SweatBridgeCommand());
 		ClientCommandHandler.instance.registerCommand(new SSCCommand());
 		// legacy stub commands
         ClientCommandHandler.instance.registerCommand(new SetKeyCommand());
