@@ -4,7 +4,6 @@ import me.celestialfault.sweatbridge.ChatConnection;
 import me.celestialfault.sweatbridge.SweatBridge;
 import me.celestialfault.sweatbridge.commands.SSCCommand;
 import net.minecraft.client.entity.EntityPlayerSP;
-import net.minecraft.util.EnumChatFormatting;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

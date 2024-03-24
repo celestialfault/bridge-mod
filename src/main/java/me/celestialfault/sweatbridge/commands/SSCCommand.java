@@ -16,16 +16,16 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class SSCCommand extends CommandBase {
+
 	private static final Map<String, String> COMMAND_HELP = new LinkedHashMap<>();
 
 	static {
 		COMMAND_HELP.put("", "Toggle sending messages in bridge chat");
 		COMMAND_HELP.put("<message>", "Send a message in bridge chat");
-		COMMAND_HELP.put("help", "Sends this message");
 		COMMAND_HELP.put("toggle", "Toggle if bridge chat should be visible");
-		COMMAND_HELP.put("key <api key>", "Set your bridge API key");
 		COMMAND_HELP.put("online", "List all players currently connected");
-		COMMAND_HELP.put("color", "Set the color for the given chat component");
+		COMMAND_HELP.put("color", "Set the color for a given chat component");
+		COMMAND_HELP.put("key", "Set your bridge API key");
 	}
 
 	private static String getHelpMessage() {
@@ -145,12 +145,8 @@ public class SSCCommand extends CommandBase {
 
 	static void setKey(String[] args) {
 		if(args.length != 1) {
-			SweatBridge.send(EnumChatFormatting.RED + "Use this command with a key obtained from /apikey in Discord!");
-			return;
-		}
-
-		if(!Config.ENABLED) {
-			SweatBridge.send(EnumChatFormatting.RED + "You have chat toggled off! Toggle it on with '/ssc toggle' before using this command!");
+			SweatBridge.send("Usage: " + EnumChatFormatting.YELLOW + "/ssc key <key>");
+			SweatBridge.send("Get an API key with /apikey in Discord!");
 			return;
 		}
 
@@ -162,16 +158,17 @@ public class SSCCommand extends CommandBase {
 
 	static void setColor(String[] args) {
 		if(args.length != 2) {
-			SweatBridge.send(EnumChatFormatting.RED + "/ssc color <prefix|arrow|username|discord> <0-9|a-f>");
+			SweatBridge.send("Usage: " + EnumChatFormatting.YELLOW + "/ssc color <prefix/arrow/username/discord> <0-9/a-f>");
+			SweatBridge.send("Example: " + EnumChatFormatting.YELLOW + "/ssc color prefix e" + EnumChatFormatting.RESET + " - sets the 'Sweat' prefix to yellow");
 			return;
 		}
 		if(args[1].length() != 1) {
-			SweatBridge.send(EnumChatFormatting.RED + "The provided color must be exactly 1 character!");
+			SweatBridge.send("The provided color must be a single character color code, such as " + EnumChatFormatting.GREEN + "a");
 			return;
 		}
+
 		String type = args[0].toLowerCase();
 		char color = args[1].charAt(0);
-
 		modifyPrefixColors(type, color);
 	}
 
