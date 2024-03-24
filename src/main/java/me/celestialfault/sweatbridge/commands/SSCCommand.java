@@ -120,11 +120,11 @@ public class SSCCommand extends CommandBase {
             case "color":
 				setColor(Arrays.copyOfRange(args, 1, args.length));
                 break;
-	        case "send":
-				requireConnected(() -> ChatConnection.sendMessage(StringUtils.join(Arrays.copyOfRange(args, 1, args.length))));
+	        case "!say":
+		        requireConnected(() -> ChatConnection.sendMessage(StringUtils.join(Arrays.copyOfRange(args, 1, args.length), " ")));
 				break;
 	        default:
-				requireConnected(() -> ChatConnection.sendMessage(StringUtils.join(args)));
+				requireConnected(() -> ChatConnection.sendMessage(StringUtils.join(args, " ")));
         }
     }
 
