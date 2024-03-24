@@ -3,6 +3,7 @@ package me.celestialfault.sweatbridge;
 import com.google.gson.JsonObject;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.EnumChatFormatting;
+import net.minecraftforge.common.ForgeHooks;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.jetbrains.annotations.Nullable;
@@ -148,7 +149,7 @@ public class ChatConnection extends WebSocketClient {
 			SweatBridge.LOGGER.warn("Failed to decode message {}", message);
 			return;
 		}
-		SweatBridge.send(format(data));
+		SweatBridge.send(ForgeHooks.newChatWithLinks(format(data)));
 
 		Minecraft client = Minecraft.getMinecraft();
 		if(client.thePlayer != null && shouldPing(data) && USERNAME_REGEX.matcher(data.get("message").getAsString()).find()) {

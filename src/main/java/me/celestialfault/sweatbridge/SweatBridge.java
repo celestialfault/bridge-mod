@@ -4,6 +4,7 @@ import me.celestialfault.sweatbridge.commands.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.IChatComponent;
 import net.minecraftforge.client.ClientCommandHandler;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
@@ -52,7 +53,7 @@ public class SweatBridge {
                 + EnumChatFormatting.RESET;
     }
 
-	public static void send(boolean prefix, ChatComponentText component) {
+	public static void send(boolean prefix, IChatComponent component) {
 		Minecraft client = Minecraft.getMinecraft();
 		if(client.thePlayer == null) {
 			return;
@@ -68,7 +69,7 @@ public class SweatBridge {
 		send(prefix, new ChatComponentText(message));
 	}
 
-	public static void send(ChatComponentText component) {
+	public static void send(IChatComponent component) {
 		send(true, component);
 	}
 
