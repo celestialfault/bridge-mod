@@ -118,6 +118,11 @@ public class ChatConnection extends WebSocketClient {
 
 	@Override
 	public void onMessage(String message) {
+		if(this != INSTANCE) {
+			this.close();
+			return;
+		}
+
 		JsonObject data;
 		try {
 			data = Config.ADAPTER.fromJson(message);
