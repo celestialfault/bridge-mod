@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 @Mod(modid = "sweatbridge", useMetadata = true)
 public class SweatBridge {
 
-    private static final char FORMAT_CODE = '§';
+    public static final char FORMAT_CODE = '§';
     public static final Logger LOGGER = LoggerFactory.getLogger(SweatBridge.class);
     public static boolean SEND_IN_CHAT = false;
 
@@ -25,6 +25,8 @@ public class SweatBridge {
     public void init(FMLInitializationEvent ignored) {
         MinecraftForge.EVENT_BUS.register(this);
         Config.load();
+		ClientCommandHandler.instance.registerCommand(new SSCCommand());
+		// for now
         ClientCommandHandler.instance.registerCommand(new ChatCommand());
         ClientCommandHandler.instance.registerCommand(new SetKeyCommand());
         ClientCommandHandler.instance.registerCommand(new ToggleChatCommand());
@@ -51,11 +53,15 @@ public class SweatBridge {
                 + EnumChatFormatting.RESET;
     }
 
-    public static void send(String message) {
+    public static void send(boolean prefix, String message) {
         Minecraft client = Minecraft.getMinecraft();
         if(client.thePlayer == null) {
             return;
         }
-        client.thePlayer.addChatMessage(new ChatComponentText(getPrefix() + message));
+        client.thePlayer.addChatMessage(new ChatComponentText(prefix ? getPrefix() + message : message));
+    }
+
+    public static void send(String message) {
+        send(true, message);
     }
 }
