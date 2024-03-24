@@ -70,7 +70,7 @@ public class SweatBridgeCommand extends CommandBase {
 
 	static void setKey(String[] args) {
 		if(args.length != 1) {
-			SweatBridge.send("Usage: " + EnumChatFormatting.YELLOW + "/ssc key <key>");
+			SweatBridge.send("Usage: " + EnumChatFormatting.YELLOW + "/sweat key <key>");
 			SweatBridge.send("Get an API key with /apikey in Discord!");
 			return;
 		}
@@ -83,8 +83,8 @@ public class SweatBridgeCommand extends CommandBase {
 
 	static void setColor(String[] args) {
 		if(args.length != 2) {
-			SweatBridge.send("Usage: " + EnumChatFormatting.YELLOW + "/ssc color <prefix/arrow/username/discord> <0-9/a-f>");
-			SweatBridge.send("Example: " + EnumChatFormatting.YELLOW + "/ssc color prefix e" + EnumChatFormatting.RESET + " - sets the 'Sweat' prefix to yellow");
+			SweatBridge.send("Usage: " + EnumChatFormatting.YELLOW + "/sweat color <prefix/arrow/username/discord> <0-9/a-f>");
+			SweatBridge.send("Example: " + EnumChatFormatting.YELLOW + "/sweat color prefix e" + EnumChatFormatting.RESET + " - sets the 'Sweat' prefix to yellow");
 			return;
 		}
 		if(args[1].length() != 1) {
