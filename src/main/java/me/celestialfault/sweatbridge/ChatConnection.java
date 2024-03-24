@@ -10,11 +10,13 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URI;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 public class ChatConnection extends WebSocketClient {
 
-	private static final Pattern USERNAME_REGEX = Pattern.compile(String.format("(\\b)(%s)(\\b)", Minecraft.getMinecraft().getSession().getUsername()));
+	private static final String CLIENT_USERNAME = Minecraft.getMinecraft().getSession().getUsername();
+	private static final Pattern USERNAME_REGEX = Pattern.compile(String.format("(\\b)(%s)(\\b)", CLIENT_USERNAME));
 	private static final char FORMAT_CODE = '§';
 	private static final String HOST = "wss://sweatbridge.odinair.xyz";
 	private static ChatConnection INSTANCE;
@@ -27,12 +29,17 @@ public class ChatConnection extends WebSocketClient {
 	}
 
 	public static URI getUri() {
-		String uri = HOST + "/ws/" + Minecraft.getMinecraft().getSession().getUsername() + '/' + Config.TOKEN;
+		String uri = HOST + "/ws/" + CLIENT_USERNAME + '/' + Config.TOKEN;
 		return URI.create(uri);
 	}
 
 	public static boolean isConnected() {
 		return INSTANCE != null && INSTANCE.isOpen();
+	}
+
+	public static void attemptConnection() {
+		disconnect();
+		Optional.ofNullable(getInstance()).ifPresent(ChatConnection::connect);
 	}
 
 	public static @Nullable ChatConnection getInstance() {
@@ -59,7 +66,7 @@ public class ChatConnection extends WebSocketClient {
 			data.addProperty("type", "request_online");
 			try {
 				INSTANCE.send(Config.ADAPTER.toJson(data));
-			} catch (IOException e) {
+			} catch(IOException e) {
 				throw new RuntimeException(e);
 			}
 		}
@@ -72,10 +79,20 @@ public class ChatConnection extends WebSocketClient {
 			data.addProperty("data", message);
 			try {
 				INSTANCE.send(Config.ADAPTER.toJson(data));
-			} catch (IOException e) {
+			} catch(IOException e) {
 				throw new RuntimeException(e);
 			}
 		}
+	}
+
+	private static boolean shouldPing(JsonObject data) {
+		if(data.has("pings") && !data.get("pings").getAsBoolean()) {
+			return false;
+		}
+		if(data.has("system") && data.get("system").getAsBoolean()) {
+			return false;
+		}
+		return !data.has("author") || !data.get("author").getAsString().equalsIgnoreCase(CLIENT_USERNAME);
 	}
 
 	private static String format(JsonObject data) {
@@ -88,7 +105,7 @@ public class ChatConnection extends WebSocketClient {
 		}
 
 		message = EnumChatFormatting.getTextWithoutFormattingCodes(message);
-		if(!data.has("pings") || data.get("pings").getAsBoolean()) {
+		if(!shouldPing(data)) {
 			message = USERNAME_REGEX.matcher(message).replaceAll("$1" + EnumChatFormatting.YELLOW + "$2" + EnumChatFormatting.RESET + "$3");
 		}
 		return "" + FORMAT_CODE + usernameColor + EnumChatFormatting.getTextWithoutFormattingCodes(data.get("author").getAsString())
@@ -132,12 +149,8 @@ public class ChatConnection extends WebSocketClient {
 		}
 		SweatBridge.send(format(data));
 
-		if((data.has("system") && data.get("system").getAsBoolean())
-				|| (data.has("pings") && !data.get("pings").getAsBoolean())) {
-			return;
-		}
 		Minecraft client = Minecraft.getMinecraft();
-		if(client.thePlayer != null && USERNAME_REGEX.matcher(data.get("message").getAsString()).find()) {
+		if(client.thePlayer != null && shouldPing(data) && USERNAME_REGEX.matcher(data.get("message").getAsString()).find()) {
 			client.thePlayer.playSound("random.successful_hit", 1f, 1f);
 		}
 	}

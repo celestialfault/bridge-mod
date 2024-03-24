@@ -12,21 +12,48 @@ import net.minecraft.util.EnumChatFormatting;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class SSCCommand extends CommandBase {
-    final List<String> COMMANDS = Arrays.asList("help", "toggle", "key", "online", "color");
+	private static final Map<String, String> COMMAND_HELP = new LinkedHashMap<>();
 
-    final String HELP_MESSAGE = "§7§m-----------------§r§7[ §" + Config.PREFIX_COLOR + "Sweat Bridge §7]§m-----------------\n" +
-            "§e/ssc <message> §8-> §fSend message in SSC.\n" +
-            "§e/ssc help §8-> §fSends this help message.\n" +
-            "§e/ssc toggle §8-> §fToggle SSC chat on or off.\n" +
-            "§e/chat ssc §8-> §fAllows to send messages without having to /ssc\n" + // temp desc
-            "§e/ssc key §8-> §fUse this command with a key obtained from /apikey in Discord.\n" +
-            "§e/ssc online §8-> §fList current online SSC users.\n" +
-            "§e/ssc color §8-> §fModify colors of SSC message.\n" +
-            "§7§m-----------------------------------------------";
+	static {
+		COMMAND_HELP.put("", "Toggle sending messages in bridge chat");
+		COMMAND_HELP.put("<message>", "Send a message in bridge chat");
+		COMMAND_HELP.put("help", "Sends this message");
+		COMMAND_HELP.put("toggle", "Toggle if bridge chat should be visible");
+		COMMAND_HELP.put("key <api key>", "Set your bridge API key");
+		COMMAND_HELP.put("online", "List all players currently connected");
+		COMMAND_HELP.put("color", "Set the color for the given chat component");
+	}
+
+	private static String getHelpMessage() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("§7§m-----------------§r§7[ §")
+			.append(Config.PREFIX_COLOR)
+			.append("Sweat Bridge §7]§m-----------------")
+			.append('\n');
+
+		for(Map.Entry<String, String> entry : COMMAND_HELP.entrySet()) {
+			builder.append(SweatBridge.FORMAT_CODE)
+				.append(Config.PREFIX_COLOR)
+				.append("/ssc");
+			if(!entry.getKey().isEmpty()) {
+				builder.append(" ").append(entry.getKey());
+			}
+			builder.append(" ")
+				.append(SweatBridge.FORMAT_CODE)
+				.append("7»")
+				.append(EnumChatFormatting.RESET)
+				.append(" ")
+				.append(entry.getValue())
+				.append('\n');
+		}
+
+		builder.append("§7§m-----------------------------------------------");
+		return builder.toString();
+	}
 
 	@Override
 	public boolean canCommandSenderUseCommand(ICommandSender sender) {
@@ -40,8 +67,29 @@ public class SSCCommand extends CommandBase {
 
     @Override
     public String getCommandUsage(ICommandSender sender) {
-        return "/ssc help";
+        return getHelpMessage();
     }
+
+	public static void requireKey(Runnable hasKey) {
+		if(Config.TOKEN == null || Config.TOKEN.isEmpty()) {
+			SweatBridge.send(EnumChatFormatting.RED + "You do not have an API key set!");
+			return;
+		}
+		hasKey.run();
+	}
+
+	public static void requireConnected(Runnable ifConnected) {
+		requireKey(() -> {
+			if(!Config.ENABLED) {
+				SweatBridge.send(EnumChatFormatting.RED + "You have chat toggled off!");
+				return;
+			} else if(!ChatConnection.isConnected()) {
+				SweatBridge.send(EnumChatFormatting.RED + "You are not connected to chat!");
+				return;
+			}
+			ifConnected.run();
+		});
+	}
 
     @Override
     public void processCommand(ICommandSender sender, String[] args) throws CommandException {
@@ -52,78 +100,80 @@ public class SSCCommand extends CommandBase {
 			} else {
 				SweatBridge.send("Messages will no longer be sent in bridge chat");
 			}
-		} else if(!COMMANDS.contains(args[0].toLowerCase())) {
-            if(Config.TOKEN == null || Config.TOKEN.isEmpty()) {
-                SweatBridge.send(EnumChatFormatting.RED + "You do not have an API key set!");
-                return;
-            } else if(!Config.ENABLED) {
-                SweatBridge.send(EnumChatFormatting.RED + "You have chat toggled off!");
-                return;
-            } else if(!ChatConnection.isConnected()) {
-                SweatBridge.send(EnumChatFormatting.RED + "You are not connected to chat!");
-                return;
-            }
-            ChatConnection.sendMessage(StringUtils.join(args, " "));
-        } else {
-            switch(args[0].toLowerCase()) {
-                case "help":
-                    SweatBridge.send(false, HELP_MESSAGE);
-                    break;
-                case "key":
-                    if(args.length != 2) {
-                        SweatBridge.send(EnumChatFormatting.RED + "Use this command with a key obtained from /apikey in Discord!");
-                        return;
-                    }
+			return;
+		}
 
-                    if(!Config.ENABLED) {
-                        SweatBridge.send(EnumChatFormatting.RED + "You have chat toggled off! Toggle it on with '/ssc toggle' before using this command!");
-                        return;
-                    }
-
-                    if(ChatConnection.isConnected()) {
-                        ChatConnection.disconnect();
-                    }
-                    Config.TOKEN = args[1];
-                    Config.save();
-                    SweatBridge.send("Key set, attempting to reconnect...");
-                    Objects.requireNonNull(ChatConnection.getInstance()).connect();
-                    break;
-                case "toggle":
-                    if(Config.ENABLED) {
-                        Config.ENABLED = false;
-                        SweatBridge.SEND_IN_CHAT = false;
-                        ChatConnection.disconnect();
-                        SweatBridge.send("Toggled chat " + EnumChatFormatting.RED + "off" + EnumChatFormatting.RESET + ".");
-                    } else {
-                        Config.ENABLED = true;
-                        ChatConnection connection = ChatConnection.getInstance();
-                        if(connection != null) connection.connect();
-                        SweatBridge.send("Toggled chat " + EnumChatFormatting.GREEN + "on" + EnumChatFormatting.RESET + ".");
-                    }
-                    Config.save();
-                    break;
-                case "online":
-                    ChatConnection.requestOnline();
-                    break;
-                case "color":
-					if(args.length != 3) {
-						SweatBridge.send(EnumChatFormatting.RED + "/ssc color <prefix|arrow|username|discord> <0-9|a-f>");
-						return;
-					}
-					if(args[2].length() != 1) {
-						SweatBridge.send(EnumChatFormatting.RED + "The provided color must be exactly 1 character!");
-						return;
-					}
-					String type = args[1].toLowerCase();
-					char color = args[2].charAt(0);
-
-					modifyPrefixColors(type, color);
-                    break;
-            }
+        switch(args[0].toLowerCase()) {
+            case "help":
+                SweatBridge.send(false, getHelpMessage());
+                break;
+            case "key":
+                setKey(Arrays.copyOfRange(args, 1, args.length));
+                break;
+            case "toggle":
+				requireKey(SSCCommand::toggle);
+                break;
+            case "online":
+				requireConnected(ChatConnection::requestOnline);
+                break;
+	        case "colour":
+            case "color":
+				setColor(Arrays.copyOfRange(args, 1, args.length));
+                break;
+	        case "send":
+	        default:
+				requireConnected(() -> ChatConnection.sendMessage(StringUtils.join(args)));
         }
     }
 
-	public void modifyPrefixColors(String type, char color) {
+	static void toggle() {
+		if(Config.ENABLED) {
+			Config.ENABLED = false;
+			SweatBridge.SEND_IN_CHAT = false;
+			ChatConnection.disconnect();
+			SweatBridge.send("Toggled chat " + EnumChatFormatting.RED + "off" + EnumChatFormatting.RESET + ".");
+		} else {
+			Config.ENABLED = true;
+			ChatConnection connection = ChatConnection.getInstance();
+			if(connection != null) connection.connect();
+			SweatBridge.send("Toggled chat " + EnumChatFormatting.GREEN + "on" + EnumChatFormatting.RESET + ".");
+		}
+		Config.save();
+	}
+
+	static void setKey(String[] args) {
+		if(args.length != 1) {
+			SweatBridge.send(EnumChatFormatting.RED + "Use this command with a key obtained from /apikey in Discord!");
+			return;
+		}
+
+		if(!Config.ENABLED) {
+			SweatBridge.send(EnumChatFormatting.RED + "You have chat toggled off! Toggle it on with '/ssc toggle' before using this command!");
+			return;
+		}
+
+		Config.TOKEN = args[0];
+		Config.save();
+		SweatBridge.send("Key set, attempting to reconnect...");
+		ChatConnection.attemptConnection();
+	}
+
+	static void setColor(String[] args) {
+		if(args.length != 2) {
+			SweatBridge.send(EnumChatFormatting.RED + "/ssc color <prefix|arrow|username|discord> <0-9|a-f>");
+			return;
+		}
+		if(args[1].length() != 1) {
+			SweatBridge.send(EnumChatFormatting.RED + "The provided color must be exactly 1 character!");
+			return;
+		}
+		String type = args[0].toLowerCase();
+		char color = args[1].charAt(0);
+
+		modifyPrefixColors(type, color);
+	}
+
+	private static void modifyPrefixColors(String type, char color) {
 		switch(type) {
 			case "prefix":
 				Config.PREFIX_COLOR = color;
@@ -144,10 +194,19 @@ public class SSCCommand extends CommandBase {
 		}
 		Config.save();
 
-		ChatComponentText hover = new ChatComponentText(EnumChatFormatting.GRAY + "[PREVIEW]");
-		hover.getChatStyle().setChatHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ChatComponentText(SweatBridge.getPrefix())));
-		ChatComponentText text = new ChatComponentText(SweatBridge.getPrefix() + "Set " + type + " color, ");
+		@SuppressWarnings("StringBufferReplaceableByString")
+		StringBuilder preview = new StringBuilder()
+			.append(SweatBridge.getPrefix())
+			.append(SweatBridge.FORMAT_CODE).append(type.equals("discord") ? Config.DISCORD_USERNAME_COLOR : Config.USERNAME_COLOR)
+			.append(type.equals("discord") ? "[DISCORD] " : "")
+			.append("Example")
+			.append(EnumChatFormatting.RESET).append(": ")
+			.append("Hello!!");
+
+		ChatComponentText hover = new ChatComponentText("" + EnumChatFormatting.YELLOW + EnumChatFormatting.BOLD + "[PREVIEW]");
+		hover.getChatStyle().setChatHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ChatComponentText(preview.toString())));
+		ChatComponentText text = new ChatComponentText("Set " + type + " color ");
 		text.appendSibling(hover);
-		SweatBridge.send(String.valueOf(text));
+		SweatBridge.send(text);
 	}
 }

@@ -1,14 +1,8 @@
 package me.celestialfault.sweatbridge.commands;
 
-import me.celestialfault.sweatbridge.ChatConnection;
-import me.celestialfault.sweatbridge.Config;
-import me.celestialfault.sweatbridge.SweatBridge;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
-import net.minecraft.util.EnumChatFormatting;
-
-import java.util.Objects;
 
 public class SetKeyCommand extends CommandBase {
 	@Override
@@ -23,23 +17,7 @@ public class SetKeyCommand extends CommandBase {
 
 	@Override
 	public void processCommand(ICommandSender sender, String[] args) throws CommandException {
-		if(args.length != 1) {
-			SweatBridge.send(EnumChatFormatting.RED + "Use this command with a key obtained from /apikey in Discord!");
-			return;
-		}
-
-		if(!Config.ENABLED) {
-			SweatBridge.send(EnumChatFormatting.RED + "You have chat toggled off! Toggle it on with /ssctoggle before using this command!");
-			return;
-		}
-
-		if(ChatConnection.isConnected()) {
-			ChatConnection.disconnect();
-		}
-		Config.TOKEN = args[0];
-		Config.save();
-		SweatBridge.send("Key set, attempting to reconnect...");
-		Objects.requireNonNull(ChatConnection.getInstance()).connect();
+		SSCCommand.setKey(args);
 	}
 
 	@Override
