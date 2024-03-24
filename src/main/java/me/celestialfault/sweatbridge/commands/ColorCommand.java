@@ -17,7 +17,7 @@ public class ColorCommand extends CommandBase {
 
 	@Override
 	public void processCommand(ICommandSender sender, String[] args) throws CommandException {
-		SSCCommand.setColor(args);
+		SweatBridgeCommand.setColor(args);
 	}
 
 	@Override

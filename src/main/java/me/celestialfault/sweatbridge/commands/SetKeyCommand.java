@@ -17,7 +17,7 @@ public class SetKeyCommand extends CommandBase {
 
 	@Override
 	public void processCommand(ICommandSender sender, String[] args) throws CommandException {
-		SSCCommand.setKey(args);
+		SweatBridgeCommand.setKey(args);
 	}
 
 	@Override

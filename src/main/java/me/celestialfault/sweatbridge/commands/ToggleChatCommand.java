@@ -17,7 +17,7 @@ public class ToggleChatCommand extends CommandBase {
 
 	@Override
 	public void processCommand(ICommandSender sender, String[] args) throws CommandException {
-		SSCCommand.requireKey(SSCCommand::toggle);
+		SSCCommand.requireKey(SweatBridgeCommand::toggle);
 	}
 
 	@Override
