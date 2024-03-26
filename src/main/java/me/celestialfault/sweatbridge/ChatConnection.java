@@ -24,6 +24,7 @@ public class ChatConnection extends WebSocketClient {
 	private static final String CLIENT_USERNAME = MinecraftClient.getInstance().getSession().getUsername();
 	private static final Pattern USERNAME_REGEX = Pattern.compile(String.format("(\\b)(%s)(\\b)", CLIENT_USERNAME));
 	private static final String HOST = "wss://sweatbridge.odinair.xyz";
+	private static final Pattern FORMATTING_CODE_PATTERN = Pattern.compile("(?i)§[0-9A-FK-OR]");
 	private static ChatConnection INSTANCE;
 	private boolean reconnecting = false;
 	private int reconnectAttempts = 0;
@@ -98,6 +99,7 @@ public class ChatConnection extends WebSocketClient {
 		if(data.has("system") && data.get("system").getAsBoolean()) {
 			return Text.literal(message);
 		}
+		message = FORMATTING_CODE_PATTERN.matcher(message).replaceAll("");
 		String author = data.get("author").getAsString();
 		Formatting usernameColor = author.startsWith("[DISCORD]") ? Config.INSTANCE.colors.discord.get()
 			: Config.INSTANCE.colors.username.get();
@@ -162,7 +164,7 @@ public class ChatConnection extends WebSocketClient {
 			SweatBridge.send(Text.empty()
 				.append(Text.literal("Chat key is invalid!").formatted(Formatting.RED))
 				.append("Set a new one with ")
-				.append(Text.literal("/ssckey").formatted(Formatting.YELLOW)));
+				.append(Text.literal("/sweat key").formatted(Formatting.YELLOW)));
 			SweatBridge.LOGGER.warn("Token is invalid, resetting in config");
 			Config.INSTANCE.token.set(null);
 			try {
