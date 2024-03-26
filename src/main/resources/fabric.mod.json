@@ -14,7 +14,7 @@
   "entrypoints": {
     "client": ["me.celestialfault.sweatbridge.SweatBridge"]
   },
-  "mixins": ["mixins.sweatbridge.json"],
+  "mixins": ["sweatbridge.mixin.json"],
   "depends": {
     "fabricloader": "*",
     "minecraft": "~1.20",
