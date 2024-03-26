@@ -21,7 +21,7 @@ jobs:
 
       - name: Execute Gradle build
         env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./gradlew build
 
       - name: Upload built mod JAR
