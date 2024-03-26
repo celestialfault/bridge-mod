@@ -3,9 +3,10 @@ package me.celestialfault.sweatbridge;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.TypeAdapter;
-import net.minecraft.client.Minecraft;
-import net.minecraft.util.EnumChatFormatting;
-import net.minecraftforge.common.ForgeHooks;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.sound.SoundEvents;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.jetbrains.annotations.Nullable;
@@ -20,9 +21,8 @@ import java.util.regex.Pattern;
 public class ChatConnection extends WebSocketClient {
 
 	private static final TypeAdapter<JsonObject> ADAPTER = new Gson().getAdapter(JsonObject.class);
-	private static final String CLIENT_USERNAME = Minecraft.getMinecraft().getSession().getUsername();
+	private static final String CLIENT_USERNAME = MinecraftClient.getInstance().getSession().getUsername();
 	private static final Pattern USERNAME_REGEX = Pattern.compile(String.format("(\\b)(%s)(\\b)", CLIENT_USERNAME));
-	private static final char FORMAT_CODE = '§';
 	private static final String HOST = "wss://sweatbridge.odinair.xyz";
 	private static ChatConnection INSTANCE;
 	private boolean reconnecting = false;
@@ -70,11 +70,7 @@ public class ChatConnection extends WebSocketClient {
 		if(INSTANCE != null) {
 			JsonObject data = new JsonObject();
 			data.addProperty("type", "request_online");
-			try {
-				INSTANCE.send(ADAPTER.toJson(data));
-			} catch(IOException e) {
-				throw new RuntimeException(e);
-			}
+			INSTANCE.send(ADAPTER.toJson(data));
 		}
 	}
 
@@ -83,11 +79,7 @@ public class ChatConnection extends WebSocketClient {
 			JsonObject data = new JsonObject();
 			data.addProperty("type", "send");
 			data.addProperty("data", message);
-			try {
-				INSTANCE.send(ADAPTER.toJson(data));
-			} catch(IOException e) {
-				throw new RuntimeException(e);
-			}
+			INSTANCE.send(ADAPTER.toJson(data));
 		}
 	}
 
@@ -101,21 +93,22 @@ public class ChatConnection extends WebSocketClient {
 		return !data.has("author") || !data.get("author").getAsString().equalsIgnoreCase(CLIENT_USERNAME);
 	}
 
-	private static String format(JsonObject data) {
-		char usernameColor = data.get("author").getAsString().startsWith("[DISCORD]")
-				? Config.INSTANCE.discord.get() : Config.INSTANCE.username.get();
-
+	private static Text format(JsonObject data) {
 		String message = data.get("message").getAsString();
 		if(data.has("system") && data.get("system").getAsBoolean()) {
-			return message;
+			return Text.literal(message);
 		}
+		String author = data.get("author").getAsString();
+		Formatting usernameColor = author.startsWith("[DISCORD]") ? Config.INSTANCE.colors.discord.get()
+			: Config.INSTANCE.colors.username.get();
 
-		message = EnumChatFormatting.getTextWithoutFormattingCodes(message);
-		if(!shouldPing(data)) {
-			message = USERNAME_REGEX.matcher(message).replaceAll("$1" + EnumChatFormatting.YELLOW + "$2" + EnumChatFormatting.RESET + "$3");
+		if(shouldPing(data)) {
+			message = USERNAME_REGEX.matcher(message).replaceAll("$1§e$2§r$3");
 		}
-		return "" + FORMAT_CODE + usernameColor + EnumChatFormatting.getTextWithoutFormattingCodes(data.get("author").getAsString())
-				+ EnumChatFormatting.RESET + ": " + message;
+		return Text.empty()
+			.append(Text.literal(author).formatted(usernameColor))
+			.append(Text.literal(": "))
+			.append(Text.literal(message));
 	}
 
 	private synchronized void delayedReconnect() {
@@ -135,7 +128,7 @@ public class ChatConnection extends WebSocketClient {
 
 	@Override
 	public void onOpen(ServerHandshake handshake) {
-		SweatBridge.send(EnumChatFormatting.GRAY + "Connected to chat");
+		SweatBridge.send(Text.literal("Connected to chat").formatted(Formatting.GRAY));
 		reconnectAttempts = 0;
 	}
 
@@ -154,18 +147,22 @@ public class ChatConnection extends WebSocketClient {
 			SweatBridge.LOGGER.warn("Failed to decode message {}", message);
 			return;
 		}
-		SweatBridge.send(ForgeHooks.newChatWithLinks(format(data)));
+		// TODO does fabric/vanilla have a similar parse links util to the one in ForgeHooks?
+		SweatBridge.send(format(data));
 
-		Minecraft client = Minecraft.getMinecraft();
-		if(client.thePlayer != null && shouldPing(data) && USERNAME_REGEX.matcher(data.get("message").getAsString()).find()) {
-			client.thePlayer.playSound("random.successful_hit", 1f, 1f);
+		MinecraftClient client = MinecraftClient.getInstance();
+		if(client.player != null && shouldPing(data) && USERNAME_REGEX.matcher(data.get("message").getAsString()).find()) {
+			client.player.playSound(SoundEvents.ENTITY_ARROW_HIT_PLAYER, 1f, 1f);
 		}
 	}
 
 	@Override
 	public void onClose(int code, String reason, boolean remote) {
 		if(reason.contains("403 Forbidden")) {
-			SweatBridge.send(EnumChatFormatting.RED + "Chat key is invalid!" + EnumChatFormatting.RESET + " Set a new one with /ssckey!");
+			SweatBridge.send(Text.empty()
+				.append(Text.literal("Chat key is invalid!").formatted(Formatting.RED))
+				.append("Set a new one with ")
+				.append(Text.literal("/ssckey").formatted(Formatting.YELLOW)));
 			SweatBridge.LOGGER.warn("Token is invalid, resetting in config");
 			Config.INSTANCE.token.set(null);
 			try {
@@ -178,7 +175,7 @@ public class ChatConnection extends WebSocketClient {
 		}
 		if(code != 1000) {
 			if(reconnectAttempts++ == 0) {
-				SweatBridge.send(EnumChatFormatting.GRAY + "Disconnected from chat, attempting to reconnect...");
+				SweatBridge.send(Text.literal("Disconnected from chat, attempting to reconnect...").formatted(Formatting.GRAY));
 			}
 			SweatBridge.LOGGER.warn("Disconnected from chat");
 			delayedReconnect();

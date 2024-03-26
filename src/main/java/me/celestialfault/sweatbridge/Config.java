@@ -1,16 +1,14 @@
 package me.celestialfault.sweatbridge;
 
 import me.celestialfault.celestialconfig.AbstractConfig;
-import me.celestialfault.celestialconfig.variables.BooleanVariable;
-import me.celestialfault.celestialconfig.variables.CharVariable;
-import me.celestialfault.celestialconfig.variables.StringVariable;
-import net.minecraft.client.Minecraft;
+import me.celestialfault.celestialconfig.variables.*;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.util.Formatting;
 
 import java.nio.file.Path;
 
 public final class Config extends AbstractConfig {
-	private static final Path PATH = Minecraft.getMinecraft().mcDataDir.toPath().toAbsolutePath()
-			.resolve("config").resolve("sweat-bridge.json");
+	private static final Path PATH = FabricLoader.getInstance().getConfigDir().resolve("sweat-bridge.json");
 
 	private Config() {
 		super(PATH);
@@ -20,8 +18,16 @@ public final class Config extends AbstractConfig {
 
 	public final StringVariable token = new StringVariable("token", null);
 	public final BooleanVariable enabled = new BooleanVariable("enabled", true);
-	public final CharVariable prefix = new CharVariable("prefix", 'e');
-	public final CharVariable arrow = new CharVariable("arrow", '6');
-	public final CharVariable username = new CharVariable("username", 'a');
-	public final CharVariable discord = new CharVariable("discord_username", 'a');
+	public final ColorCodes colors = new ColorCodes();
+
+	public static class ColorCodes extends VariableMap {
+		private ColorCodes() {
+			super("colors");
+		}
+
+		public final EnumVariable<Formatting> prefix = new EnumVariable<>("prefix", Formatting.class, Formatting.YELLOW);
+		public final EnumVariable<Formatting> arrow = new EnumVariable<>("arrow", Formatting.class, Formatting.GOLD);
+		public final EnumVariable<Formatting> username = new EnumVariable<>("username", Formatting.class, Formatting.GREEN);
+		public final EnumVariable<Formatting> discord = new EnumVariable<>("discord_username", Formatting.class, Formatting.GREEN);
+	}
 }

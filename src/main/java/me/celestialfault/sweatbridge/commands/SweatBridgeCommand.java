@@ -1,130 +1,142 @@
 package me.celestialfault.sweatbridge.commands;
 
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
+import com.mojang.brigadier.tree.CommandNode;
 import me.celestialfault.sweatbridge.ChatConnection;
 import me.celestialfault.sweatbridge.Config;
 import me.celestialfault.sweatbridge.SweatBridge;
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.event.HoverEvent;
-import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.EnumChatFormatting;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
+import net.minecraft.command.CommandSource;
+import net.minecraft.text.HoverEvent;
+import net.minecraft.text.Style;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
 
-public class SweatBridgeCommand extends CommandBase {
-	private static final Map<String, String> COMMAND_HELP = new LinkedHashMap<>();
+public class SweatBridgeCommand {
+	@SuppressWarnings("CodeBlock2Expr")
+	private static final SuggestionProvider<FabricClientCommandSource> MESSAGE_PARTS = (context, builder) -> {
+		return CommandSource.suggestMatching(List.of("prefix", "arrow", "username", "discord"), builder);
+	};
+	private static final SuggestionProvider<FabricClientCommandSource> COLORS = (context, builder) -> {
+		Stream<String> names = Arrays.stream(Formatting.values())
+			.filter(Formatting::isColor)
+			.map(x -> x.name().toLowerCase());
+		return CommandSource.suggestMatching(names, builder);
+	};
 
-	static {
-		COMMAND_HELP.put("/ssc", "Toggle sending messages in bridge chat");
-		COMMAND_HELP.put("/ssc <message>", "Send a message in bridge chat");
-		COMMAND_HELP.put("toggle", "Toggle if bridge chat should be visible");
-		COMMAND_HELP.put("online", "List all players currently connected");
-		COMMAND_HELP.put("color", "Set the color for a given chat component");
-		COMMAND_HELP.put("key", "Set your bridge API key");
+	public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher) {
+		CommandNode<FabricClientCommandSource> toggle = ClientCommandManager.literal("toggle")
+			.executes(SweatBridgeCommand::toggle)
+			.build();
+
+		CommandNode<FabricClientCommandSource> online = ClientCommandManager.literal("online")
+			.executes(SweatBridgeCommand::online)
+			.build();
+
+		CommandNode<FabricClientCommandSource> key = ClientCommandManager.literal("key")
+			.then(ClientCommandManager.argument("key", StringArgumentType.string())
+				.executes(SweatBridgeCommand::setKey))
+			.build();
+
+		CommandNode<FabricClientCommandSource> color = ClientCommandManager.literal("color")
+			.then(ClientCommandManager.argument("part", StringArgumentType.string())
+				.suggests(MESSAGE_PARTS)
+				.then(ClientCommandManager.argument("color", StringArgumentType.string())
+					.suggests(COLORS)
+					.executes(SweatBridgeCommand::setColor)))
+			.build();
+
+		CommandNode<FabricClientCommandSource> root = dispatcher.register(ClientCommandManager.literal("sweatbridge")
+			.then(key)
+			.then(toggle)
+			.then(online)
+			.then(color));
+		dispatcher.register(ClientCommandManager.literal("sweat").redirect(root));
 	}
 
-	static String getHelpMessage() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("§7§m-----------------§r§7[ §")
-			.append(Config.INSTANCE.prefix.get())
-			.append("Sweat Bridge §7]§m-----------------")
-			.append('\n');
-
-		for(Map.Entry<String, String> entry : COMMAND_HELP.entrySet()) {
-			builder.append(SweatBridge.FORMAT_CODE)
-				.append(Config.INSTANCE.prefix.get());
-			if(!entry.getKey().isEmpty() && !entry.getKey().startsWith("/")) {
-				builder.append("/sweat ");
-			}
-			if(!entry.getKey().isEmpty()) {
-				builder.append(entry.getKey());
-			}
-			builder.append(" ")
-				.append(SweatBridge.FORMAT_CODE)
-				.append("7»")
-				.append(EnumChatFormatting.RESET)
-				.append(" ")
-				.append(entry.getValue())
-				.append('\n');
-		}
-
-		builder.append("§7§m-----------------------------------------------");
-		return builder.toString();
+	private static int online(CommandContext<FabricClientCommandSource> ctx) {
+		SSCCommand.requireConnected(ctx, ChatConnection::requestOnline);
+		return 0;
 	}
 
 	@SuppressWarnings("DataFlowIssue")
-	static void toggle() {
+	private static int toggle(CommandContext<FabricClientCommandSource> ctx) {
 		if(Config.INSTANCE.enabled.get()) {
 			Config.INSTANCE.enabled.set(false);
 			SweatBridge.SEND_IN_CHAT = false;
 			ChatConnection.disconnect();
-			SweatBridge.send("Toggled chat " + EnumChatFormatting.RED + "off" + EnumChatFormatting.RESET + ".");
+			ctx.getSource().sendFeedback(SweatBridge.getPrefix()
+				.append("Toggled chat ")
+				.append("off").formatted(Formatting.RED)
+				.append("."));
 		} else {
 			Config.INSTANCE.enabled.set(true);
 			ChatConnection connection = ChatConnection.getInstance();
 			if(connection != null) connection.connect();
-			SweatBridge.send("Toggled chat " + EnumChatFormatting.GREEN + "on" + EnumChatFormatting.RESET + ".");
+			ctx.getSource().sendFeedback(SweatBridge.getPrefix()
+				.append("Toggled chat ")
+				.append("on").formatted(Formatting.GREEN)
+				.append("."));
 		}
 		try {
 			Config.INSTANCE.save();
 		} catch(IOException e) {
 			throw new RuntimeException(e);
 		}
+		return 0;
 	}
 
-	static void setKey(String[] args) {
-		if(args.length != 1) {
-			SweatBridge.send("Usage: " + EnumChatFormatting.YELLOW + "/sweat key <key>");
-			SweatBridge.send("Get an API key with /apikey in Discord!");
-			return;
-		}
-
-		Config.INSTANCE.token.set(args[0]);
+	private static int setKey(CommandContext<FabricClientCommandSource> ctx) {
+		Config.INSTANCE.token.set(StringArgumentType.getString(ctx, "key"));
 		try {
 			Config.INSTANCE.save();
 		} catch(IOException e) {
 			throw new RuntimeException(e);
 		}
-		SweatBridge.send("Key set, attempting to reconnect...");
+		ctx.getSource().sendFeedback(SweatBridge.getPrefix().append("Key set!"));
 		ChatConnection.attemptConnection();
+		return 0;
 	}
 
-	static void setColor(String[] args) {
-		if(args.length != 2) {
-			SweatBridge.send("Usage: " + EnumChatFormatting.YELLOW + "/sweat color <prefix/arrow/username/discord> <0-9/a-f>");
-			SweatBridge.send("Example: " + EnumChatFormatting.YELLOW + "/sweat color prefix e" + EnumChatFormatting.RESET + " - sets the 'Sweat' prefix to yellow");
-			return;
-		}
-		if(args[1].length() != 1) {
-			SweatBridge.send("The provided color must be a single character color code, such as " + EnumChatFormatting.GREEN + "a");
-			return;
+	@SuppressWarnings("SameReturnValue")
+	private static int setColor(CommandContext<FabricClientCommandSource> ctx) {
+		String type = StringArgumentType.getString(ctx, "part");
+		String colorName = StringArgumentType.getString(ctx, "color");
+		Formatting color = Arrays.stream(Formatting.values())
+			.filter(x -> x.name().equalsIgnoreCase(colorName))
+			.findFirst()
+			.orElse(null);
+		if(color == null) {
+			ctx.getSource().sendError(Text.literal(colorName + " is not a valid color"));
+			return 0;
 		}
 
-		String type = args[0].toLowerCase();
-		char color = args[1].charAt(0);
-		modifyPrefixColors(type, color);
-	}
-
-	private static void modifyPrefixColors(String type, char color) {
-		switch(type) {
+		switch(type.toLowerCase()) {
 			case "prefix":
-				Config.INSTANCE.prefix.set(color);
+				Config.INSTANCE.colors.prefix.set(color);
 				break;
 			case "arrow":
-				Config.INSTANCE.arrow.set(color);
+				Config.INSTANCE.colors.arrow.set(color);
 				break;
 			case "name":
 			case "username":
-				Config.INSTANCE.username.set(color);
+				Config.INSTANCE.colors.username.set(color);
 				break;
 			case "discord":
-				Config.INSTANCE.discord.set(color);
+				Config.INSTANCE.colors.discord.set(color);
 				break;
 			default:
-				SweatBridge.send(EnumChatFormatting.RED + "Expected one of either prefix, arrow, username, or discord; instead got " + type);
-				return;
+				ctx.getSource().sendError(Text.literal(type + " is not a valid message part"));
+				return 0;
 		}
 		try {
 			Config.INSTANCE.save();
@@ -132,65 +144,22 @@ public class SweatBridgeCommand extends CommandBase {
 			throw new RuntimeException(e);
 		}
 
-		@SuppressWarnings("StringBufferReplaceableByString")
-		StringBuilder preview = new StringBuilder()
+		Formatting previewUsername = type.equals("discord") ? Config.INSTANCE.colors.discord.get() : Config.INSTANCE.colors.username.get();
+		Text preview = Text.empty()
 			.append(SweatBridge.getPrefix())
-			.append(SweatBridge.FORMAT_CODE).append(type.equals("discord") ? Config.INSTANCE.discord.get() : Config.INSTANCE.username.get())
-			.append(type.equals("discord") ? "[DISCORD] " : "")
-			.append("Example")
-			.append(EnumChatFormatting.RESET).append(": ")
-			.append("Hello!!");
+			.append(Text.empty()
+				.append(type.equals("discord") ? "[DISCORD] " : "").formatted(previewUsername)
+				.append("Example").formatted(previewUsername))
+			.append(": Hello!!");
 
-		ChatComponentText hover = new ChatComponentText("" + EnumChatFormatting.YELLOW + EnumChatFormatting.BOLD + "[PREVIEW]");
-		hover.getChatStyle().setChatHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ChatComponentText(preview.toString())));
-		ChatComponentText text = new ChatComponentText("Set " + type + " color ");
-		text.appendSibling(hover);
-		SweatBridge.send(text);
-	}
+		Text text = SweatBridge.getPrefix().append("Set ").append(type).append(" color ")
+			.append(Text.literal("[PREVIEW]")
+				.setStyle(Style.EMPTY
+					.withBold(true)
+					.withColor(Formatting.YELLOW)
+					.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, preview))));
 
-	@Override
-	public String getCommandName() {
-		return "sweatbridge";
-	}
-
-	@Override
-	public String getCommandUsage(ICommandSender sender) {
-		return getHelpMessage();
-	}
-
-	@Override
-	public void processCommand(ICommandSender sender, String[] args) throws CommandException {
-		if(args.length == 0) {
-			SweatBridge.send(false, getHelpMessage());
-			return;
-		}
-
-		switch(args[0].toLowerCase()) {
-			case "key":
-				setKey(Arrays.copyOfRange(args, 1, args.length));
-				break;
-			case "toggle":
-				SSCCommand.requireKey(SweatBridgeCommand::toggle);
-				break;
-			case "online":
-				SSCCommand.requireConnected(ChatConnection::requestOnline);
-				break;
-			case "colour":
-			case "color":
-				setColor(Arrays.copyOfRange(args, 1, args.length));
-				break;
-			default:
-				SweatBridge.send(false, getHelpMessage());
-		}
-	}
-
-	@Override
-	public boolean canCommandSenderUseCommand(ICommandSender sender) {
-		return true;
-	}
-
-	@Override
-	public List<String> getCommandAliases() {
-		return Collections.singletonList("sweat");
+		ctx.getSource().sendFeedback(text);
+		return 0;
 	}
 }
