@@ -14,6 +14,8 @@ import net.minecraftforge.fml.common.network.FMLNetworkEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
+
 @Mod(modid = "sweatbridge", useMetadata = true)
 public class SweatBridge {
 
@@ -25,8 +27,12 @@ public class SweatBridge {
     @Mod.EventHandler
     public void init(FMLInitializationEvent ignored) {
         MinecraftForge.EVENT_BUS.register(this);
-        Config.load();
-		ClientCommandHandler.instance.registerCommand(new SweatBridgeCommand());
+	    try {
+		    Config.INSTANCE.load();
+	    } catch(IOException e) {
+		    throw new RuntimeException(e);
+	    }
+	    ClientCommandHandler.instance.registerCommand(new SweatBridgeCommand());
 		ClientCommandHandler.instance.registerCommand(new SSCCommand());
 		// legacy stub commands
         ClientCommandHandler.instance.registerCommand(new SetKeyCommand());
@@ -49,8 +55,8 @@ public class SweatBridge {
     }
 
     public static String getPrefix() {
-        return "" + FORMAT_CODE + Config.PREFIX_COLOR + EnumChatFormatting.BOLD + "Sweat"
-                + FORMAT_CODE + Config.ARROW_COLOR + " > "
+        return "" + FORMAT_CODE + Config.INSTANCE.prefix.get() + EnumChatFormatting.BOLD + "Sweat"
+                + FORMAT_CODE + Config.INSTANCE.arrow.get() + " > "
                 + EnumChatFormatting.RESET;
     }
 

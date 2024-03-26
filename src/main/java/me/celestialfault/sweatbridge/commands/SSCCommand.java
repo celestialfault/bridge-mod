@@ -29,17 +29,19 @@ public class SSCCommand extends CommandBase {
         return SweatBridgeCommand.getHelpMessage();
     }
 
+	@SuppressWarnings("DataFlowIssue")
 	public static void requireKey(Runnable hasKey) {
-		if(Config.TOKEN == null || Config.TOKEN.isEmpty()) {
+		if(Config.INSTANCE.token.get() == null || Config.INSTANCE.token.get().isEmpty()) {
 			SweatBridge.send(EnumChatFormatting.RED + "You do not have an API key set!");
 			return;
 		}
 		hasKey.run();
 	}
 
+	@SuppressWarnings("DataFlowIssue")
 	public static void requireConnected(Runnable ifConnected) {
 		requireKey(() -> {
-			if(!Config.ENABLED) {
+			if(!Config.INSTANCE.enabled.get()) {
 				SweatBridge.send(EnumChatFormatting.RED + "You have chat toggled off!");
 				return;
 			} else if(!ChatConnection.isConnected()) {

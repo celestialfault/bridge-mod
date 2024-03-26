@@ -10,6 +10,7 @@ import net.minecraft.event.HoverEvent;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 
+import java.io.IOException;
 import java.util.*;
 
 public class SweatBridgeCommand extends CommandBase {
@@ -27,13 +28,13 @@ public class SweatBridgeCommand extends CommandBase {
 	static String getHelpMessage() {
 		StringBuilder builder = new StringBuilder();
 		builder.append("§7§m-----------------§r§7[ §")
-			.append(Config.PREFIX_COLOR)
+			.append(Config.INSTANCE.prefix.get())
 			.append("Sweat Bridge §7]§m-----------------")
 			.append('\n');
 
 		for(Map.Entry<String, String> entry : COMMAND_HELP.entrySet()) {
 			builder.append(SweatBridge.FORMAT_CODE)
-				.append(Config.PREFIX_COLOR);
+				.append(Config.INSTANCE.prefix.get());
 			if(!entry.getKey().isEmpty() && !entry.getKey().startsWith("/")) {
 				builder.append("/sweat ");
 			}
@@ -53,19 +54,24 @@ public class SweatBridgeCommand extends CommandBase {
 		return builder.toString();
 	}
 
+	@SuppressWarnings("DataFlowIssue")
 	static void toggle() {
-		if(Config.ENABLED) {
-			Config.ENABLED = false;
+		if(Config.INSTANCE.enabled.get()) {
+			Config.INSTANCE.enabled.set(false);
 			SweatBridge.SEND_IN_CHAT = false;
 			ChatConnection.disconnect();
 			SweatBridge.send("Toggled chat " + EnumChatFormatting.RED + "off" + EnumChatFormatting.RESET + ".");
 		} else {
-			Config.ENABLED = true;
+			Config.INSTANCE.enabled.set(true);
 			ChatConnection connection = ChatConnection.getInstance();
 			if(connection != null) connection.connect();
 			SweatBridge.send("Toggled chat " + EnumChatFormatting.GREEN + "on" + EnumChatFormatting.RESET + ".");
 		}
-		Config.save();
+		try {
+			Config.INSTANCE.save();
+		} catch(IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	static void setKey(String[] args) {
@@ -75,8 +81,12 @@ public class SweatBridgeCommand extends CommandBase {
 			return;
 		}
 
-		Config.TOKEN = args[0];
-		Config.save();
+		Config.INSTANCE.token.set(args[0]);
+		try {
+			Config.INSTANCE.save();
+		} catch(IOException e) {
+			throw new RuntimeException(e);
+		}
 		SweatBridge.send("Key set, attempting to reconnect...");
 		ChatConnection.attemptConnection();
 	}
@@ -100,28 +110,32 @@ public class SweatBridgeCommand extends CommandBase {
 	private static void modifyPrefixColors(String type, char color) {
 		switch(type) {
 			case "prefix":
-				Config.PREFIX_COLOR = color;
+				Config.INSTANCE.prefix.set(color);
 				break;
 			case "arrow":
-				Config.ARROW_COLOR = color;
+				Config.INSTANCE.arrow.set(color);
 				break;
 			case "name":
 			case "username":
-				Config.USERNAME_COLOR = color;
+				Config.INSTANCE.username.set(color);
 				break;
 			case "discord":
-				Config.DISCORD_USERNAME_COLOR = color;
+				Config.INSTANCE.discord.set(color);
 				break;
 			default:
 				SweatBridge.send(EnumChatFormatting.RED + "Expected one of either prefix, arrow, username, or discord; instead got " + type);
 				return;
 		}
-		Config.save();
+		try {
+			Config.INSTANCE.save();
+		} catch(IOException e) {
+			throw new RuntimeException(e);
+		}
 
 		@SuppressWarnings("StringBufferReplaceableByString")
 		StringBuilder preview = new StringBuilder()
 			.append(SweatBridge.getPrefix())
-			.append(SweatBridge.FORMAT_CODE).append(type.equals("discord") ? Config.DISCORD_USERNAME_COLOR : Config.USERNAME_COLOR)
+			.append(SweatBridge.FORMAT_CODE).append(type.equals("discord") ? Config.INSTANCE.discord.get() : Config.INSTANCE.username.get())
 			.append(type.equals("discord") ? "[DISCORD] " : "")
 			.append("Example")
 			.append(EnumChatFormatting.RESET).append(": ")

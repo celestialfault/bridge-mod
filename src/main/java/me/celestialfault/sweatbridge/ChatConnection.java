@@ -1,6 +1,8 @@
 package me.celestialfault.sweatbridge;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.TypeAdapter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.common.ForgeHooks;
@@ -14,8 +16,10 @@ import java.net.URI;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
+@SuppressWarnings("DataFlowIssue")
 public class ChatConnection extends WebSocketClient {
 
+	private static final TypeAdapter<JsonObject> ADAPTER = new Gson().getAdapter(JsonObject.class);
 	private static final String CLIENT_USERNAME = Minecraft.getMinecraft().getSession().getUsername();
 	private static final Pattern USERNAME_REGEX = Pattern.compile(String.format("(\\b)(%s)(\\b)", CLIENT_USERNAME));
 	private static final char FORMAT_CODE = '§';
@@ -30,7 +34,7 @@ public class ChatConnection extends WebSocketClient {
 	}
 
 	public static URI getUri() {
-		String uri = HOST + "/ws/" + CLIENT_USERNAME + '/' + Config.TOKEN;
+		String uri = HOST + "/ws/" + CLIENT_USERNAME + '/' + Config.INSTANCE.token.get();
 		return URI.create(uri);
 	}
 
@@ -44,7 +48,8 @@ public class ChatConnection extends WebSocketClient {
 	}
 
 	public static @Nullable ChatConnection getInstance() {
-		if(Config.TOKEN == null || Config.TOKEN.isEmpty() || !Config.ENABLED) {
+		String token = Config.INSTANCE.token.get();
+		if(token == null || token.isEmpty() || !Config.INSTANCE.enabled.get()) {
 			return null;
 		}
 
@@ -66,7 +71,7 @@ public class ChatConnection extends WebSocketClient {
 			JsonObject data = new JsonObject();
 			data.addProperty("type", "request_online");
 			try {
-				INSTANCE.send(Config.ADAPTER.toJson(data));
+				INSTANCE.send(ADAPTER.toJson(data));
 			} catch(IOException e) {
 				throw new RuntimeException(e);
 			}
@@ -79,7 +84,7 @@ public class ChatConnection extends WebSocketClient {
 			data.addProperty("type", "send");
 			data.addProperty("data", message);
 			try {
-				INSTANCE.send(Config.ADAPTER.toJson(data));
+				INSTANCE.send(ADAPTER.toJson(data));
 			} catch(IOException e) {
 				throw new RuntimeException(e);
 			}
@@ -98,7 +103,7 @@ public class ChatConnection extends WebSocketClient {
 
 	private static String format(JsonObject data) {
 		char usernameColor = data.get("author").getAsString().startsWith("[DISCORD]")
-				? Config.DISCORD_USERNAME_COLOR : Config.USERNAME_COLOR;
+				? Config.INSTANCE.discord.get() : Config.INSTANCE.username.get();
 
 		String message = data.get("message").getAsString();
 		if(data.has("system") && data.get("system").getAsBoolean()) {
@@ -144,7 +149,7 @@ public class ChatConnection extends WebSocketClient {
 
 		JsonObject data;
 		try {
-			data = Config.ADAPTER.fromJson(message);
+			data = ADAPTER.fromJson(message);
 		} catch(IOException e) {
 			SweatBridge.LOGGER.warn("Failed to decode message {}", message);
 			return;
@@ -162,8 +167,12 @@ public class ChatConnection extends WebSocketClient {
 		if(reason.contains("403 Forbidden")) {
 			SweatBridge.send(EnumChatFormatting.RED + "Chat key is invalid!" + EnumChatFormatting.RESET + " Set a new one with /ssckey!");
 			SweatBridge.LOGGER.warn("Token is invalid, resetting in config");
-			Config.TOKEN = null;
-			Config.save();
+			Config.INSTANCE.token.set(null);
+			try {
+				Config.INSTANCE.save();
+			} catch(IOException e) {
+				throw new RuntimeException(e);
+			}
 			INSTANCE = null;
 			return;
 		}

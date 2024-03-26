@@ -58,6 +58,13 @@ repositories {
     mavenCentral()
     maven("https://repo.spongepowered.org/maven/")
     maven("https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1")
+	maven {
+		url = uri("https://maven.pkg.github.com/celestialfault/celestial-config")
+		credentials {
+			username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
+			password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
+		}
+	}
 }
 
 val shadowImpl: Configuration by configurations.creating {
@@ -70,6 +77,9 @@ dependencies {
     forge("net.minecraftforge:forge:1.8.9-11.15.1.2318-1.8.9")
 
     shadowImpl("org.java-websocket:Java-WebSocket:1.5.6")
+	shadowImpl("me.celestialfault.celestialconfig:celestial-config:0.1") {
+		isTransitive = false
+	}
 
     shadowImpl("org.spongepowered:mixin:0.7.11-SNAPSHOT") {
         isTransitive = false
