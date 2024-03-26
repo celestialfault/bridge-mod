@@ -12,7 +12,7 @@ plugins {
 
 val baseGroup: String by project
 val mcVersion: String by project
-val version: String by project
+val version: String = "${project.version}+${mcVersion}"
 val mixinGroup = "$baseGroup.mixin"
 val modid: String by project
 
@@ -77,7 +77,7 @@ dependencies {
     forge("net.minecraftforge:forge:1.8.9-11.15.1.2318-1.8.9")
 
     shadowImpl("org.java-websocket:Java-WebSocket:1.5.6")
-	shadowImpl("me.celestialfault.celestialconfig:celestial-config:0.1") {
+	shadowImpl("me.celestialfault.celestialconfig:celestial-config:0.2") {
 		isTransitive = false
 	}
 
@@ -86,7 +86,7 @@ dependencies {
     }
     annotationProcessor("org.spongepowered:mixin:0.8.5-SNAPSHOT")
 
-    runtimeOnly("me.djtheredstoner:DevAuth-forge-legacy:1.1.2")
+    runtimeOnly("me.djtheredstoner:DevAuth-forge-legacy:1.2.0")
 }
 
 // Tasks:

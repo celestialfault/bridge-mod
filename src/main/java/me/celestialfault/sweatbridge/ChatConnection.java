@@ -111,7 +111,7 @@ public class ChatConnection extends WebSocketClient {
 		}
 
 		message = EnumChatFormatting.getTextWithoutFormattingCodes(message);
-		if(!shouldPing(data)) {
+		if(shouldPing(data)) {
 			message = USERNAME_REGEX.matcher(message).replaceAll("$1" + EnumChatFormatting.YELLOW + "$2" + EnumChatFormatting.RESET + "$3");
 		}
 		return "" + FORMAT_CODE + usernameColor + EnumChatFormatting.getTextWithoutFormattingCodes(data.get("author").getAsString())
