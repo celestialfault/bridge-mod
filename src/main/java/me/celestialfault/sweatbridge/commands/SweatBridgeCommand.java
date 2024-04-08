@@ -54,7 +54,6 @@ public class SweatBridgeCommand extends CommandBase {
 		return builder.toString();
 	}
 
-	@SuppressWarnings("DataFlowIssue")
 	static void toggle() {
 		if(Config.INSTANCE.enabled.get()) {
 			Config.INSTANCE.enabled.set(false);

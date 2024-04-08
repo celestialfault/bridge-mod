@@ -16,7 +16,6 @@ import java.net.URI;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-@SuppressWarnings("DataFlowIssue")
 public class ChatConnection extends WebSocketClient {
 
 	private static final TypeAdapter<JsonObject> ADAPTER = new Gson().getAdapter(JsonObject.class);

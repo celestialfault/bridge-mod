@@ -29,7 +29,6 @@ public class SSCCommand extends CommandBase {
         return SweatBridgeCommand.getHelpMessage();
     }
 
-	@SuppressWarnings("DataFlowIssue")
 	public static void requireKey(Runnable hasKey) {
 		if(Config.INSTANCE.token.get() == null || Config.INSTANCE.token.get().isEmpty()) {
 			SweatBridge.send(EnumChatFormatting.RED + "You do not have an API key set!");
@@ -38,7 +37,6 @@ public class SSCCommand extends CommandBase {
 		hasKey.run();
 	}
 
-	@SuppressWarnings("DataFlowIssue")
 	public static void requireConnected(Runnable ifConnected) {
 		requireKey(() -> {
 			if(!Config.INSTANCE.enabled.get()) {
