@@ -11,10 +11,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(ClientPlayNetworkHandler.class)
-public abstract class ClientPlayNetworkHandlerMixin {
+abstract class ClientPlayNetworkHandlerMixin {
 	@Inject(method = "sendChatMessage", at = @At("HEAD"), cancellable = true)
 	public void sweatbridge$interceptSentMessage(String message, CallbackInfo ci) {
-		if(SweatBridge.SEND_IN_CHAT) {
+		if(SweatBridge.getSendInChat()) {
 			if(ChatConnection.isConnected()) {
 				ChatConnection.sendMessage(message);
 			} else {
@@ -33,10 +33,10 @@ public abstract class ClientPlayNetworkHandlerMixin {
 		String[] parts = command.split(" ");
 		if(parts[0].equalsIgnoreCase("chat") && parts.length > 1) {
 			if(parts[1].equalsIgnoreCase("ssc")) {
-				SweatBridge.SEND_IN_CHAT = true;
+				SweatBridge.setSendInChat(true);
 				ci.cancel();
 			} else {
-				SweatBridge.SEND_IN_CHAT = false;
+				SweatBridge.setSendInChat(false);
 			}
 		}
 	}
