@@ -6,6 +6,7 @@ import com.google.gson.TypeAdapter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.common.ForgeHooks;
+import net.minecraftforge.fml.common.Loader;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.jetbrains.annotations.Nullable;
@@ -22,7 +23,7 @@ public class ChatConnection extends WebSocketClient {
 	private static final String CLIENT_USERNAME = Minecraft.getMinecraft().getSession().getUsername();
 	private static final Pattern USERNAME_REGEX = Pattern.compile(String.format("(\\b)(%s)(\\b)", CLIENT_USERNAME));
 	private static final char FORMAT_CODE = '§';
-	private static final String HOST = "wss://sweatbridge.odinair.xyz";
+	private static final String HOST = "wss://bridge.celestialfault.dev";
 	private static ChatConnection INSTANCE;
 	private boolean reconnecting = false;
 	private int reconnectAttempts = 0;
@@ -30,6 +31,8 @@ public class ChatConnection extends WebSocketClient {
 	private ChatConnection() {
 		super(getUri());
 		addHeader("Api-Version", "1");
+		addHeader("Minecraft-Version", Loader.MC_VERSION);
+		addHeader("Mod-Version", SweatBridge.VERSION);
 	}
 
 	public static URI getUri() {
